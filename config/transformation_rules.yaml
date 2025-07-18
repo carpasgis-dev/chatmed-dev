@@ -1,0 +1,8 @@
+# Reglas de transformación por defecto
+
+date_format: YYYY-MM-DD
+boolean_mapping:
+  "1": true
+  "0": false
+  "true": true
+  "false": false 

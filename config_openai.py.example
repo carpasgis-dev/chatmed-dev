@@ -1,0 +1,41 @@
+# ChatMed - Configuración de OpenAI
+# Copia este archivo como config_openai.py y agrega tu API key
+
+# Configuración de OpenAI
+OPENAI_API_KEY = "tu-openai-api-key-aqui"
+
+# Modelo de OpenAI a usar
+OPENAI_MODEL = "gpt-4"  # o "gpt-3.5-turbo"
+
+# Configuración de temperatura (0.0 = muy determinístico, 1.0 = muy creativo)
+OPENAI_TEMPERATURE = 0.7
+
+# Configuración de tokens máximos
+OPENAI_MAX_TOKENS = 4000
+
+# Configuración de timeout (en segundos)
+OPENAI_TIMEOUT = 30
+
+# Configuración de reintentos
+OPENAI_MAX_RETRIES = 3
+
+# Configuración de base de datos
+DATABASE_PATH = "database_new.sqlite3.db"
+
+# Configuración de MedGemma (opcional)
+MEDGEMMA_MODEL = "medgemma-2b-it"
+
+# Configuración de PubMed (opcional)
+PUBMED_API_KEY = "tu-pubmed-api-key-aqui"
+
+# Configuración de logging
+LOG_LEVEL = "INFO"
+LOG_FILE = "chatmed.log"
+
+# Configuración de cache
+ENABLE_CACHE = True
+CACHE_DURATION = 3600  # segundos
+
+# Configuración de rendimiento
+ENABLE_PERFORMANCE_MONITORING = True
+MAX_CONCURRENT_REQUESTS = 5 

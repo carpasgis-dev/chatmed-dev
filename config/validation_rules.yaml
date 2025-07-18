@@ -1,0 +1,5 @@
+# Reglas de validación FHIR por defecto
+
+required_fields:
+  - id
+fhir_resource_validation: true 

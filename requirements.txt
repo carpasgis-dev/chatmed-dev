@@ -1,0 +1,22 @@
+# ChatMed v2 Flexible - Dependencias
+# ================================
+
+# Dependencias principales
+langchain>=0.1.0
+langchain-openai>=0.1.0
+langgraph>=0.2.0
+langsmith>=0.2.0
+openai>=1.0.0
+
+# Para búsquedas biomédicas
+biopython>=1.81
+duckduckgo-search>=4.1.1
+aiohttp>=3.9.1
+
+# Para procesamiento asíncrono y HTTP
+asyncio>=3.4.3
+requests>=2.31.0
+
+# Para logging y utilidades
+python-dotenv>=1.0.0
+pyyaml>=6.0.1 

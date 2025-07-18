@@ -1,0 +1,150 @@
+# 🎯 TYPE MAPPINGS: Configuración de Mapeos SQL→FHIR
+# ═══════════════════════════════════════════════════════════════
+# Mapeos bidireccionales optimizados para el sistema flexible
+
+# 📊 MAPEOS DE TIPOS SQL → FHIR
+sql_to_fhir_types:
+  # Tipos numéricos
+  INT: integer
+  BIGINT: integer
+  SMALLINT: integer
+  TINYINT: integer
+  DECIMAL: decimal
+  FLOAT: decimal
+  REAL: decimal
+  
+  # Tipos de texto
+  NVARCHAR: string
+  VARCHAR: string
+  CHAR: string
+  TEXT: string
+  NTEXT: string
+  
+  # Tipos de fecha/hora
+  DATETIME2: dateTime
+  DATETIME: dateTime
+  DATE: date
+  TIME: time
+  TIMESTAMP: dateTime
+  
+  # Tipos lógicos
+  BIT: boolean
+  BOOLEAN: boolean
+  
+  # Tipos binarios
+  BLOB: base64Binary
+  BINARY: base64Binary
+  VARBINARY: base64Binary
+
+# 🔄 TRANSFORMACIONES DE VALORES
+value_transformations:
+  boolean:
+    - from: [1, "1", "true", "TRUE", "yes", "YES", "sí", "SÍ"]
+      to: true
+    - from: [0, "0", "false", "FALSE", "no", "NO"]
+      to: false
+    
+  gender:
+    - from: ["M", "m", "male", "MALE", "masculino", "MASCULINO", "1"]
+      to: "male"
+    - from: ["F", "f", "female", "FEMALE", "femenino", "FEMENINO", "2"]
+      to: "female"
+    - from: ["U", "u", "unknown", "UNKNOWN", "desconocido", "DESCONOCIDO", "0"]
+      to: "unknown"
+    
+  encounter_status:
+    - from: ["active", "ACTIVE", "en_curso", "EN_CURSO", "activo", "ACTIVO"]
+      to: "in-progress"
+    - from: ["finished", "FINISHED", "alta", "ALTA", "completado", "COMPLETADO"]
+      to: "finished"
+    - from: ["cancelled", "CANCELLED", "cancelado", "CANCELADO"]
+      to: "cancelled"
+      
+  procedure_status:
+    - from: ["completed", "COMPLETED", "realizado", "REALIZADO", "terminado"]
+      to: "completed"
+    - from: ["in-progress", "IN_PROGRESS", "en_curso", "EN_CURSO"]
+      to: "in-progress"
+    - from: ["stopped", "STOPPED", "parado", "PARADO", "cancelado"]
+      to: "stopped"
+
+# 🎯 PATRONES DE CAMPOS ESPECÍFICOS
+field_patterns:
+  identifiers:
+    - pattern: ".*_ID$"
+      fhir_type: "identifier"
+      system_template: "http://hospital.local/{table_name}"
+      
+  codes:
+    - pattern: ".*_CODE$"
+      fhir_type: "CodeableConcept"
+      coding_system: "http://hospital.local/codes"
+      
+  dates:
+    - pattern: ".*_DATE$"
+      fhir_type: "dateTime"
+    - pattern: ".*_START_DATE$"
+      fhir_type: "dateTime"
+      fhir_path: "period.start"
+    - pattern: ".*_END_DATE$"
+      fhir_type: "dateTime"
+      fhir_path: "period.end"
+    - pattern: ".*_BIRTH_DATE$"
+      fhir_type: "date"
+      fhir_path: "birthDate"
+      
+  descriptions:
+    - pattern: ".*_DESCRIPTION.*"
+      fhir_type: "string"
+      fhir_path: "text"
+    - pattern: ".*_NAME.*"
+      fhir_type: "string"
+      fhir_path: "name"
+    - pattern: ".*_OBSERVATION.*"
+      fhir_type: "string"
+      fhir_path: "text"
+      
+  references:
+    - pattern: "PATI_ID$"
+      fhir_type: "Reference"
+      reference_type: "Patient"
+    - pattern: "EPIS_ID$"
+      fhir_type: "Reference"
+      reference_type: "Encounter"
+    - pattern: "PROC_ID$"
+      fhir_type: "Reference"
+      reference_type: "Procedure"
+    - pattern: "MEDI_ID$"
+      fhir_type: "Reference"
+      reference_type: "Medication"
+
+# 📋 VALIDACIONES AUTOMÁTICAS
+validation_rules:
+  required_fields:
+    all_resources: ["id", "resourceType"]
+    Patient: ["name"]
+    Encounter: ["subject", "status"]
+    Procedure: ["subject", "status", "code"]
+    Observation: ["subject", "status", "code"]
+    
+  format_validation:
+    dateTime: "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}.*$"
+    date: "^\\d{4}-\\d{2}-\\d{2}$"
+    email: "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$"
+    phone: "^[+]?[0-9\\s\\-\\(\\)]{7,15}$"
+
+# 🔧 CONFIGURACIÓN DE FALLBACKS
+fallback_strategies:
+  unknown_type:
+    default_fhir_type: "string"
+    confidence_penalty: 0.3
+    
+  missing_mapping:
+    use_field_name: true
+    to_lowercase: true
+    replace_underscores: true
+    
+  validation_failure:
+    log_error: true
+    use_basic_resource: false
+    skip_field: true 

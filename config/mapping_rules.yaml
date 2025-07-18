@@ -1,0 +1,30 @@
+# Reglas de mapeo flexibles por defecto
+# Se pueden extender en cualquier momento sin modificar el código
+
+# Tabla PATI_PATIENTS mapeada a recurso FHIR Patient
+# Solo campos esenciales como ejemplo
+
+tables:
+  PATI_PATIENTS:
+    fhir_resource: Patient
+    fields:
+      PATI_ID:
+        fhir_path: id
+        type: string
+      PATI_NAME:
+        fhir_path: name[0].text
+        type: string
+      PATI_BIRTHDATE:
+        fhir_path: birthDate
+        type: date
+
+patterns:
+  id_patterns:
+    - "*_ID"
+    - "ID"
+  name_patterns:
+    - "*_NAME"
+    - "NAME*"
+  date_patterns:
+    - "*_DATE"
+    - "*_BIRTHDATE" 
