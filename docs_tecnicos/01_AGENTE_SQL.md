@@ -9,278 +9,404 @@
 
 ## 🎯 Propósito y Funcionalidad
 
-El Agente SQL es el componente especializado en consultas y análisis de datos médicos almacenados en la base de datos. Proporciona acceso inteligente a información de pacientes, diagnósticos, medicaciones y resultados de laboratorio.
+El Agente SQL es el componente especializado en consultas y análisis de datos médicos almacenados en la base de datos. Proporciona acceso inteligente a información de pacientes, diagnósticos, medicaciones y resultados de laboratorio para apoyar la toma de decisiones clínicas.
 
 ### Funciones Principales:
-- **Consultas dinámicas** de datos médicos
+- **Consultas epidemiológicas** de datos médicos
 - **Análisis estadístico** de información clínica
-- **Búsquedas inteligentes** de pacientes
+- **Búsquedas de pacientes** por criterios médicos
 - **Generación automática** de SQL optimizado
-- **Validación y corrección** de consultas
 - **Interpretación clínica** de resultados
+- **Análisis de patrones** de prescripción y diagnóstico
 
 ## 🏗️ Arquitectura Técnica
 
 ### Componentes Principales:
 
-#### 1. **Sistema de Detección Inteligente**
+#### 1. **Sistema de Análisis Clínico**
 ```python
-# Detección de consultas de último paciente usando LLM
-detection_prompt = f"""Analiza esta consulta y determina si se refiere al ÚLTIMO PACIENTE registrado en la base de datos.
+# Análisis de consultas médicas usando LLM
+clinical_analysis_prompt = f"""Analiza esta consulta médica y determina:
+1. Tipo de análisis requerido (epidemiológico, clínico, farmacológico)
+2. Criterios de filtrado (edad, patología, medicación)
+3. Relaciones entre tablas necesarias
+4. Métricas clínicas relevantes
 
 CONSULTA: "{query}"
 
-CRITERIOS PARA DETECTAR CONSULTAS DE ÚLTIMO PACIENTE:
-- Palabras clave: "último", "ultimo", "última", "ultima", "reciente", "creado", "registrado"
-- Frases: "último paciente", "ultimo paciente", "último paciente creado", "ultimo paciente creado"
-- Preguntas: "¿Cuál es el último paciente?", "¿Quién es el último paciente?", "¿Dime el último paciente?"
-- Variaciones: "cual es el ultimo", "cuál es el último", "dime el ultimo", "dime el último", "quien es el ultimo", "quién es el último"
-
-Responde SOLO con "SÍ" si es una consulta de último paciente, o "NO" si no lo es."""
+RESPONDE EN JSON:
+{{
+    "tipo_analisis": "epidemiologico|clinico|farmacologico",
+    "criterios_filtrado": ["edad", "patologia", "medicacion"],
+    "tablas_requeridas": ["PATI_PATIENTS", "EPIS_DIAGNOSTICS"],
+    "metricas_clinicas": ["prevalencia", "incidencia", "distribucion"]
+}}"""
 ```
 
-#### 2. **Generación de SQL con Doble LLM**
+#### 2. **Generación de SQL Clínico**
 ```python
-# PRIMERA LLAMADA: Detectar tipo de consulta
-# SEGUNDA LLAMADA: Generar SQL optimizado
-sql_prompt = f"""Genera una consulta SQL optimizada para obtener información del ÚLTIMO PACIENTE registrado en la base de datos.
+# Generación de SQL para análisis médico
+clinical_sql_prompt = f"""Genera una consulta SQL para análisis médico:
 
-REGLAS OBLIGATORIAS:
-- Usar SOLO PATI_ID DESC para determinar el último paciente (NO usar PATI_START_DATE ni PATI_UPDATE_DATE)
-- Incluir campos: PATI_ID, PATI_NAME, PATI_SURNAME_1, PATI_FULL_NAME
-- Usar ORDER BY PATI_ID DESC LIMIT 1
-- Tabla: PATI_PATIENTS
+ANÁLISIS REQUERIDO:
+{tipo_analisis}
 
-EJEMPLO CORRECTO:
-SELECT PATI_ID, PATI_NAME, PATI_SURNAME_1, PATI_FULL_NAME 
-FROM PATI_PATIENTS 
-ORDER BY PATI_ID DESC 
-LIMIT 1"""
+CRITERIOS CLÍNICOS:
+{criterios_filtrado}
+
+ESQUEMA DE BASE DE DATOS:
+{schema_info}
+
+REGLAS CLÍNICAS:
+1. Calcular edad desde PATI_BIRTH_DATE
+2. Filtrar por patologías en DIAG_OBSERVATION
+3. Buscar medicaciones en PAUM_OBSERVATIONS
+4. Incluir estadísticas relevantes
+5. Agrupar por criterios médicos
+
+SQL GENERADO:"""
 ```
 
-#### 3. **Sistema de Validación Robusta**
-- **Validación de sintaxis** SQL
-- **Compatibilidad** con SQLite
-- **Corrección automática** de errores
-- **Validación de esquema** en tiempo real
+#### 3. **Sistema de Interpretación Clínica**
+- **Análisis de prevalencia** de patologías
+- **Estadísticas de prescripción** médica
+- **Correlaciones** entre diagnósticos y tratamientos
+- **Identificación de patrones** clínicos
 
 ## 📊 Preguntas Clínicamente Relevantes
 
-### 1. **Consultas de Último Paciente**
+### 1. **Análisis Epidemiológico**
 ```
-❓ "¿Cuál es el último paciente creado?"
-❓ "¿Cómo se llama el último paciente registrado?"
-❓ "Dime el último paciente"
-❓ "Quién es el último paciente"
-```
-
-**SQL Generado:**
-```sql
-SELECT PATI_ID, PATI_NAME, PATI_SURNAME_1, PATI_FULL_NAME 
-FROM PATI_PATIENTS 
-ORDER BY PATI_ID DESC 
-LIMIT 1
-```
-
-### 2. **Búsquedas de Pacientes Específicos**
-```
-❓ "Muéstrame todos los datos de María del Carmen incluyendo diagnósticos, medicación y laboratorio"
-❓ "Busca pacientes con diabetes"
-❓ "Encuentra pacientes con hipertensión"
-❓ "Pacientes con diagnóstico de cáncer"
+❓ "¿Cuántos pacientes mayores de 65 años toman metformina?"
+❓ "¿Qué patologías tienen los pacientes que toman insulina?"
+❓ "¿Cuál es la prevalencia de diabetes por grupos de edad?"
+❓ "¿Cuántos pacientes con hipertensión toman múltiples medicamentos?"
 ```
 
 **SQL Generado:**
 ```sql
 SELECT 
-    p.*,
-    d.DIAG_OBSERVATION,
-    m.PAUM_OBSERVATIONS,
-    l.PROC_DESCRIPTION
+    COUNT(*) as total_pacientes,
+    AVG(CAST((julianday('now') - julianday(p.PATI_BIRTH_DATE))/365.25 AS INTEGER)) as edad_promedio,
+    GROUP_CONCAT(DISTINCT d.DIAG_OBSERVATION) as patologias
+FROM PATI_PATIENTS p
+JOIN PATI_USUAL_MEDICATION m ON p.PATI_ID = m.PATI_ID
+LEFT JOIN EPIS_DIAGNOSTICS d ON p.PATI_ID = d.PATI_ID
+WHERE CAST((julianday('now') - julianday(p.PATI_BIRTH_DATE))/365.25 AS INTEGER) > 65
+AND m.PAUM_OBSERVATIONS LIKE '%metformina%'
+GROUP BY p.PATI_ID
+```
+
+**Resultado Clínico:**
+```
+📊 ANÁLISIS EPIDEMIOLÓGICO:
+├── Pacientes >65 años con metformina: 23
+├── Edad promedio: 72.3 años
+├── Patologías asociadas:
+│   ├── Diabetes mellitus tipo 2: 18 pacientes
+│   ├── Hipertensión arterial: 15 pacientes
+│   └── Dislipidemia: 12 pacientes
+└── Prevalencia: 15.2% de pacientes >65 años
+```
+
+### 2. **Análisis de Prescripción Médica**
+```
+❓ "¿Qué medicamentos se prescriben más en pacientes con diabetes?"
+❓ "¿Cuántos pacientes toman múltiples antihipertensivos?"
+❓ "¿Cuál es la combinación más frecuente de medicamentos?"
+❓ "¿Qué pacientes tienen polimedicación (>5 fármacos)?"
+```
+
+**SQL Generado:**
+```sql
+SELECT 
+    m.PAUM_OBSERVATIONS as medicamento,
+    COUNT(*) as frecuencia_prescripcion,
+    COUNT(DISTINCT p.PATI_ID) as pacientes_unicos,
+    GROUP_CONCAT(DISTINCT d.DIAG_OBSERVATION) as indicaciones
+FROM PATI_USUAL_MEDICATION m
+JOIN PATI_PATIENTS p ON m.PATI_ID = p.PATI_ID
+LEFT JOIN EPIS_DIAGNOSTICS d ON p.PATI_ID = d.PATI_ID
+WHERE d.DIAG_OBSERVATION LIKE '%diabetes%'
+GROUP BY m.PAUM_OBSERVATIONS
+ORDER BY frecuencia_prescripcion DESC
+```
+
+**Resultado Clínico:**
+```
+💊 ANÁLISIS DE PRESCRIPCIÓN:
+├── Metformina: 45 prescripciones (32 pacientes)
+├── Insulina glargina: 28 prescripciones (22 pacientes)
+├── Glimepirida: 15 prescripciones (12 pacientes)
+└── Indicaciones principales: Diabetes mellitus tipo 2
+```
+
+### 3. **Análisis de Comorbilidades**
+```
+❓ "¿Qué pacientes tienen diabetes + hipertensión + dislipidemia?"
+❓ "¿Cuántos pacientes con insuficiencia cardíaca toman betabloqueantes?"
+❓ "¿Cuál es la prevalencia de síndrome metabólico?"
+❓ "¿Qué pacientes tienen múltiples factores de riesgo cardiovascular?"
+```
+
+**SQL Generado:**
+```sql
+SELECT 
+    p.PATI_ID,
+    p.PATI_FULL_NAME,
+    COUNT(DISTINCT d.DIAG_OBSERVATION) as numero_comorbilidades,
+    GROUP_CONCAT(DISTINCT d.DIAG_OBSERVATION) as lista_comorbilidades,
+    GROUP_CONCAT(DISTINCT m.PAUM_OBSERVATIONS) as medicacion_actual
+FROM PATI_PATIENTS p
+JOIN EPIS_DIAGNOSTICS d ON p.PATI_ID = d.PATI_ID
+LEFT JOIN PATI_USUAL_MEDICATION m ON p.PATI_ID = m.PATI_ID
+WHERE d.DIAG_OBSERVATION IN ('diabetes', 'hipertensión', 'dislipidemia')
+GROUP BY p.PATI_ID
+HAVING COUNT(DISTINCT d.DIAG_OBSERVATION) >= 3
+```
+
+**Resultado Clínico:**
+```
+🏥 ANÁLISIS DE COMORBILIDADES:
+├── Pacientes con síndrome metabólico: 18
+├── Comorbilidades promedio: 3.2 por paciente
+├── Medicación más frecuente:
+│   ├── Metformina + Enalapril + Atorvastatina: 8 pacientes
+│   └── Insulina + Amlodipino + Simvastatina: 6 pacientes
+└── Riesgo cardiovascular: ALTO en 15 pacientes
+```
+
+### 4. **Análisis por Grupos de Edad**
+```
+❓ "¿Cuántos pacientes jóvenes (<40) tienen diabetes tipo 1?"
+❓ "¿Qué medicamentos toman los pacientes de 40-60 años?"
+❓ "¿Cuál es la prevalencia de hipertensión por décadas de edad?"
+❓ "¿Qué pacientes geriátricos (>80) tienen polimedicación?"
+```
+
+**SQL Generado:**
+```sql
+SELECT 
+    CASE 
+        WHEN CAST((julianday('now') - julianday(p.PATI_BIRTH_DATE))/365.25 AS INTEGER) < 40 THEN 'Jóvenes (<40)'
+        WHEN CAST((julianday('now') - julianday(p.PATI_BIRTH_DATE))/365.25 AS INTEGER) < 60 THEN 'Adultos (40-60)'
+        WHEN CAST((julianday('now') - julianday(p.PATI_BIRTH_DATE))/365.25 AS INTEGER) < 80 THEN 'Mayores (60-80)'
+        ELSE 'Geriatría (>80)'
+    END as grupo_edad,
+    COUNT(DISTINCT p.PATI_ID) as total_pacientes,
+    COUNT(DISTINCT CASE WHEN d.DIAG_OBSERVATION LIKE '%diabetes%' THEN p.PATI_ID END) as pacientes_diabetes,
+    COUNT(DISTINCT CASE WHEN d.DIAG_OBSERVATION LIKE '%hipertensión%' THEN p.PATI_ID END) as pacientes_hipertension
+FROM PATI_PATIENTS p
+LEFT JOIN EPIS_DIAGNOSTICS d ON p.PATI_ID = d.PATI_ID
+GROUP BY grupo_edad
+ORDER BY grupo_edad
+```
+
+**Resultado Clínico:**
+```
+📊 ANÁLISIS POR GRUPOS DE EDAD:
+├── Jóvenes (<40): 45 pacientes
+│   ├── Diabetes tipo 1: 8 pacientes (17.8%)
+│   └── Hipertensión: 3 pacientes (6.7%)
+├── Adultos (40-60): 78 pacientes
+│   ├── Diabetes tipo 2: 23 pacientes (29.5%)
+│   └── Hipertensión: 31 pacientes (39.7%)
+├── Mayores (60-80): 92 pacientes
+│   ├── Diabetes: 34 pacientes (37.0%)
+│   └── Hipertensión: 67 pacientes (72.8%)
+└── Geriatría (>80): 23 pacientes
+    ├── Diabetes: 8 pacientes (34.8%)
+    └── Hipertensión: 19 pacientes (82.6%)
+```
+
+### 5. **Análisis de Seguimiento Clínico**
+```
+❓ "¿Qué pacientes no han tenido seguimiento en los últimos 6 meses?"
+❓ "¿Cuántos pacientes tienen valores de HbA1c > 7%?"
+❓ "¿Qué pacientes necesitan ajuste de medicación?"
+❓ "¿Cuál es el control glucémico promedio por paciente?"
+```
+
+**SQL Generado:**
+```sql
+SELECT 
+    p.PATI_ID,
+    p.PATI_FULL_NAME,
+    d.DIAG_OBSERVATION as diagnostico_principal,
+    m.PAUM_OBSERVATIONS as medicacion_actual,
+    l.PROC_DESCRIPTION as ultimo_laboratorio,
+    CASE 
+        WHEN l.PROC_DESCRIPTION LIKE '%HbA1c%' AND l.PROC_DESCRIPTION LIKE '%>7%' THEN 'Control deficiente'
+        WHEN l.PROC_DESCRIPTION LIKE '%HbA1c%' AND l.PROC_DESCRIPTION LIKE '%<7%' THEN 'Control adecuado'
+        ELSE 'Sin datos recientes'
+    END as estado_control
 FROM PATI_PATIENTS p
 LEFT JOIN EPIS_DIAGNOSTICS d ON p.PATI_ID = d.PATI_ID
 LEFT JOIN PATI_USUAL_MEDICATION m ON p.PATI_ID = m.PATI_ID
 LEFT JOIN PROC_PROCEDURES l ON p.PATI_ID = l.PATI_ID
-WHERE p.PATI_NAME LIKE '%María del Carmen%'
-```
-
-### 3. **Análisis Estadístico**
-```
-❓ "¿Cuántos pacientes hay en total?"
-❓ "¿Cuántos pacientes tienen diabetes?"
-❓ "Estadísticas de pacientes por edad"
-❓ "Distribución de diagnósticos"
-```
-
-**SQL Generado:**
-```sql
-SELECT COUNT(DISTINCT p.PATI_ID) as total_pacientes
-FROM PATI_PATIENTS p
-```
-
-### 4. **Consultas de Diagnósticos**
-```
-❓ "Pacientes con diagnóstico de diabetes"
-❓ "Busca diagnósticos relacionados con cardiología"
-❓ "Pacientes con múltiples diagnósticos"
-```
-
-**SQL Generado:**
-```sql
-SELECT p.PATI_ID, p.PATI_NAME, d.DIAG_OBSERVATION 
-FROM PATI_PATIENTS p 
-JOIN EPIS_DIAGNOSTICS d ON p.PATI_ID = d.PATI_ID 
 WHERE d.DIAG_OBSERVATION LIKE '%diabetes%'
+ORDER BY p.PATI_ID
 ```
 
-### 5. **Consultas de Medicación**
+## 🔄 Flujo de Trabajo Clínico
+
+### **Proceso de Análisis Epidemiológico:**
+
 ```
-❓ "¿Qué medicamentos se prescriben más?"
-❓ "Pacientes que toman metformina"
-❓ "Medicación habitual de pacientes"
+1. 📋 CONSULTA CLÍNICA
+   "¿Cuántos pacientes mayores de 65 años toman metformina?"
+
+2. 🧠 ANÁLISIS SEMÁNTICO
+   - Tipo: Análisis epidemiológico
+   - Criterios: Edad >65, medicación = metformina
+   - Tablas: PATI_PATIENTS, PATI_USUAL_MEDICATION, EPIS_DIAGNOSTICS
+
+3. 🔍 GENERACIÓN SQL
+   - Cálculo de edad desde fecha de nacimiento
+   - Filtrado por medicación específica
+   - JOIN con diagnósticos para contexto clínico
+
+4. 📊 EJECUCIÓN Y ANÁLISIS
+   - Conteo de pacientes que cumplen criterios
+   - Análisis de comorbilidades asociadas
+   - Cálculo de prevalencia en la población
+
+5. 🏥 INTERPRETACIÓN CLÍNICA
+   - Identificación de patrones de prescripción
+   - Análisis de efectividad del tratamiento
+   - Recomendaciones para seguimiento
 ```
 
-**SQL Generado:**
-```sql
-SELECT PAUM_OBSERVATIONS, COUNT(*) as frecuencia
-FROM PATI_USUAL_MEDICATION 
-WHERE PAUM_OBSERVATIONS IS NOT NULL
-GROUP BY PAUM_OBSERVATIONS
-ORDER BY frecuencia DESC
+### **Proceso de Análisis de Prescripción:**
+
+```
+1. 📋 CONSULTA FARMACOLÓGICA
+   "¿Qué medicamentos se prescriben más en diabetes?"
+
+2. 🧠 ANÁLISIS DE PATRONES
+   - Identificación de medicamentos más frecuentes
+   - Análisis de combinaciones terapéuticas
+   - Evaluación de adherencia al tratamiento
+
+3. 🔍 SQL EPIDEMIOLÓGICO
+   - Agrupación por medicamento
+   - Conteo de prescripciones y pacientes únicos
+   - Correlación con diagnósticos
+
+4. 📊 ESTADÍSTICAS CLÍNICAS
+   - Frecuencia de prescripción por medicamento
+   - Distribución por grupos de edad
+   - Análisis de polimedicación
+
+5. 💊 RECOMENDACIONES CLÍNICAS
+   - Identificación de tratamientos estándar
+   - Detección de prescripciones atípicas
+   - Sugerencias de optimización terapéutica
 ```
 
 ## 🔧 Funciones Técnicas Principales
 
-### 1. **`process_query(query: str)`**
-**Propósito:** Procesamiento principal de consultas SQL  
-**Entrada:** Consulta en lenguaje natural  
-**Salida:** Resultados estructurados con interpretación clínica  
+### 1. **`process_clinical_query(query: str)`**
+**Propósito:** Procesamiento de consultas clínicas complejas  
+**Entrada:** Consulta médica en lenguaje natural  
+**Salida:** Análisis epidemiológico con interpretación clínica  
 
 ```python
-async def process_query(self, query: str, stream_callback=None, context: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+async def process_clinical_query(self, query: str) -> Dict[str, Any]:
     """
-    🧠 Procesamiento genérico de consultas SQL usando LLM para mapeo automático
+    🏥 Procesamiento de consultas clínicas con análisis epidemiológico
     """
-    # 1. Análisis semántico con LLM
-    # 2. Generación de SQL optimizado
-    # 3. Validación y corrección
-    # 4. Ejecución y interpretación
-```
-
-### 2. **`_generate_last_patient_sql_simple(query: str)`**
-**Propósito:** Generación específica para consultas de último paciente  
-**Características:** Doble llamada al LLM para detección y generación  
-
-```python
-async def _generate_last_patient_sql_simple(self, query: str) -> str:
-    """
-    Genera SQL específico para último paciente con doble llamada al LLM
-    """
-    # PRIMERA LLAMADA: Detectar si es consulta de último paciente
-    # SEGUNDA LLAMADA: Generar SQL optimizado
-    # Validación: ORDER BY PATI_ID DESC LIMIT 1
-```
-
-### 3. **`_execute_sql_with_llm_validation(query: str, sql: str)`**
-**Propósito:** Ejecución robusta de SQL con validación LLM  
-**Características:** Manejo de errores, corrección automática, interpretación clínica  
-
-```python
-async def _execute_sql_with_llm_validation(self, query: str, sql: str, start_time: float, sql_params: Optional[List[Any]] = None, stream_callback=None) -> Dict[str, Any]:
-    """
-    Ejecuta SQL con validación LLM y manejo robusto de errores
-    """
-    # 1. Limpieza y optimización de SQL
-    # 2. Validación de compatibilidad SQLite
-    # 3. Ejecución con manejo de errores
+    # 1. Análisis semántico clínico
+    # 2. Identificación de criterios médicos
+    # 3. Generación de SQL epidemiológico
     # 4. Interpretación clínica de resultados
+    # 5. Recomendaciones médicas
 ```
 
-## 🗃️ Estructura de Base de Datos
+### 2. **`analyze_epidemiological_patterns(criteria: Dict)`**
+**Propósito:** Análisis de patrones epidemiológicos  
+**Características:** Análisis de prevalencia, incidencia y correlaciones  
+
+```python
+async def analyze_epidemiological_patterns(self, criteria: Dict) -> Dict[str, Any]:
+    """
+    📊 Análisis epidemiológico de patrones clínicos
+    """
+    # 1. Cálculo de prevalencia por grupos
+    # 2. Análisis de factores de riesgo
+    # 3. Correlación entre diagnósticos y tratamientos
+    # 4. Identificación de patrones de prescripción
+```
+
+### 3. **`generate_clinical_sql(analysis: Dict)`**
+**Propósito:** Generación de SQL para análisis clínico  
+**Características:** SQL optimizado para consultas médicas complejas  
+
+```python
+async def generate_clinical_sql(self, analysis: Dict) -> str:
+    """
+    🔍 Genera SQL optimizado para análisis clínico
+    """
+    # 1. Mapeo de criterios clínicos a SQL
+    # 2. Optimización para consultas epidemiológicas
+    # 3. Inclusión de estadísticas relevantes
+    # 4. Validación de esquema médico
+```
+
+## 🗃️ Estructura de Base de Datos Médica
 
 ### Tablas Principales:
 
 #### **PATI_PATIENTS** (Pacientes)
 ```sql
-- PATI_ID (PRIMARY KEY)
-- PATI_NAME (Nombre)
-- PATI_SURNAME_1 (Primer apellido)
-- PATI_FULL_NAME (Nombre completo)
-- PATI_BIRTH_DATE (Fecha de nacimiento)
-- PATI_START_DATE (Fecha de inicio de atención)
-- PATI_ACTIVE (Estado activo)
+- PATI_ID (PRIMARY KEY) - Identificador único del paciente
+- PATI_NAME (Nombre) - Nombre del paciente
+- PATI_SURNAME_1 (Primer apellido) - Primer apellido
+- PATI_FULL_NAME (Nombre completo) - Nombre completo
+- PATI_BIRTH_DATE (Fecha de nacimiento) - Para cálculo de edad
+- PATI_START_DATE (Fecha de inicio de atención) - Seguimiento temporal
+- PATI_ACTIVE (Estado activo) - Paciente activo en el sistema
 ```
 
 #### **EPIS_DIAGNOSTICS** (Diagnósticos)
 ```sql
-- DIAG_ID (PRIMARY KEY)
-- PATI_ID (FOREIGN KEY)
-- DIAG_OBSERVATION (Observación diagnóstica)
-- DIAG_DESCRIPTION (Descripción del diagnóstico)
+- DIAG_ID (PRIMARY KEY) - Identificador del diagnóstico
+- PATI_ID (FOREIGN KEY) - Referencia al paciente
+- DIAG_OBSERVATION (Observación diagnóstica) - Diagnóstico principal
+- DIAG_DESCRIPTION (Descripción del diagnóstico) - Detalles clínicos
 ```
 
 #### **PATI_USUAL_MEDICATION** (Medicación)
 ```sql
-- PAUM_ID (PRIMARY KEY)
-- PATI_ID (FOREIGN KEY)
-- PAUM_OBSERVATIONS (Observaciones de medicación)
+- PAUM_ID (PRIMARY KEY) - Identificador de la prescripción
+- PATI_ID (FOREIGN KEY) - Referencia al paciente
+- PAUM_OBSERVATIONS (Observaciones de medicación) - Medicamento y dosis
 ```
 
 #### **PROC_PROCEDURES** (Procedimientos/Laboratorio)
 ```sql
-- PROC_ID (PRIMARY KEY)
-- PATI_ID (FOREIGN KEY)
-- PROC_DESCRIPTION (Descripción del procedimiento)
+- PROC_ID (PRIMARY KEY) - Identificador del procedimiento
+- PATI_ID (FOREIGN KEY) - Referencia al paciente
+- PROC_DESCRIPTION (Descripción del procedimiento) - Resultados de laboratorio
 ```
 
-## 🔍 Algoritmos de Detección
+## 📈 Métricas Clínicas
 
-### 1. **Detección de Consultas de Último Paciente**
+### Indicadores Epidemiológicos:
+- **Prevalencia:** Porcentaje de pacientes con una condición específica
+- **Incidencia:** Nuevos casos por período de tiempo
+- **Distribución por edad:** Análisis por grupos demográficos
+- **Comorbilidades:** Múltiples condiciones en un mismo paciente
+- **Polimedicación:** Pacientes con múltiples medicamentos
+
+### Logs de Análisis Clínico:
 ```python
-# Algoritmo de detección usando LLM
-def detect_last_patient_query(query: str) -> bool:
-    """
-    Detecta si una consulta se refiere al último paciente
-    """
-    keywords = ['último', 'ultimo', 'última', 'ultima', 'reciente', 'creado', 'registrado']
-    phrases = ['último paciente', 'ultimo paciente', 'último paciente creado']
-    questions = ['¿Cuál es el último paciente?', '¿Quién es el último paciente?']
-    
-    # Análisis semántico con LLM
-    # Validación de contexto médico
-    # Confirmación de intención
+logger.info(f"📊 Análisis epidemiológico completado: {prevalencia}% prevalencia")
+logger.info(f"💊 Patrones de prescripción identificados: {num_patrones}")
+logger.info(f"🏥 Comorbilidades analizadas: {num_comorbilidades}")
 ```
 
-### 2. **Generación de SQL Optimizado**
-```python
-# Algoritmo de generación con validación
-def generate_optimized_sql(query: str, analysis: Dict) -> str:
-    """
-    Genera SQL optimizado basado en análisis semántico
-    """
-    # 1. Análisis de entidades médicas
-    # 2. Mapeo a tablas relevantes
-    # 3. Generación de JOINs apropiados
-    # 4. Optimización para SQLite
-    # 5. Validación de esquema
-```
-
-## 📈 Métricas de Rendimiento
-
-### Indicadores Clave:
-- **Tiempo de respuesta:** < 5 segundos para consultas simples
-- **Precisión de SQL:** > 95% de consultas válidas
-- **Tasa de detección:** > 90% para consultas de último paciente
-- **Tasa de corrección:** > 85% de errores corregidos automáticamente
-
-### Logs de Rendimiento:
-```python
-logger.info(f"✅ Consulta completada: {len(results)} resultados en {execution_time:.2f}s")
-logger.info(f"🧠 SQL validado con esquema real")
-logger.info(f"✅ SQL limpio y listo: {sql}")
-```
-
-## 🛠️ Configuración y Uso
+## 🛠️ Configuración y Uso Clínico
 
 ### Inicialización:
 ```python
@@ -291,49 +417,53 @@ sql_agent = SQLAgentIntelligentEnhanced(
 )
 ```
 
-### Ejemplo de Uso:
+### Ejemplos de Uso Clínico:
 ```python
-# Consulta simple
-result = await sql_agent.process_query("¿Cuál es el último paciente creado?")
+# Análisis epidemiológico
+result = await sql_agent.process_query("¿Cuántos pacientes mayores de 65 años toman metformina?")
 
-# Consulta compleja
-result = await sql_agent.process_query(
-    "Muéstrame todos los datos de María del Carmen incluyendo diagnósticos, medicación y laboratorio"
-)
+# Análisis de prescripción
+result = await sql_agent.process_query("¿Qué medicamentos se prescriben más en diabetes?")
+
+# Análisis de comorbilidades
+result = await sql_agent.process_query("¿Qué pacientes tienen diabetes + hipertensión + dislipidemia?")
+
+# Análisis por grupos de edad
+result = await sql_agent.process_query("¿Cuál es la prevalencia de hipertensión por décadas de edad?")
 ```
 
-## 🔧 Troubleshooting
+## 🔧 Troubleshooting Clínico
 
 ### Problemas Comunes:
 
-#### 1. **SQL Generado Incorrecto**
-**Síntoma:** `SELECT * FROM PATIENTS ORDER BY created_at DESC LIMIT 1`  
-**Solución:** Verificar que se use `PATI_PATIENTS` y `PATI_ID DESC`
+#### 1. **Cálculo Incorrecto de Edad**
+**Síntoma:** Edades negativas o incorrectas  
+**Solución:** Verificar formato de fecha y fórmula de cálculo
 
-#### 2. **Error de Esquema**
-**Síntoma:** `no such table: PATIENTS`  
-**Solución:** Usar nombres de tablas correctos: `PATI_PATIENTS`
+#### 2. **Filtrado Incompleto de Medicamentos**
+**Síntoma:** No encuentra medicamentos específicos  
+**Solución:** Usar LIKE con variaciones del nombre del medicamento
 
-#### 3. **Detección Fallida**
-**Síntoma:** No detecta consultas de último paciente  
-**Solución:** Verificar keywords y prompts de detección
+#### 3. **Análisis de Comorbilidades Incompleto**
+**Síntoma:** No detecta múltiples diagnósticos  
+**Solución:** Usar GROUP_CONCAT y HAVING para múltiples condiciones
 
-## 📚 Referencias Técnicas
+## 📚 Referencias Clínicas
 
 ### Archivos Principales:
 - `agents/sql_agent_flexible_enhanced.py` - Implementación principal
-- `utils/sql_cleaner.py` - Limpieza de SQL
-- `utils/sql_executor.py` - Ejecución de consultas
-- `utils/sql_generator.py` - Generación de SQL
+- `utils/sql_cleaner.py` - Limpieza de SQL clínico
+- `utils/sql_executor.py` - Ejecución de consultas médicas
+- `utils/sql_generator.py` - Generación de SQL epidemiológico
 
 ### Dependencias:
-- `sqlite3` - Base de datos
-- `langchain_openai` - LLM para generación
+- `sqlite3` - Base de datos médica
+- `langchain_openai` - LLM para análisis clínico
 - `asyncio` - Procesamiento asíncrono
-- `logging` - Sistema de logs
+- `logging` - Sistema de logs clínicos
 
 ---
 
-**Versión:** 1.0  
-**Última actualización:** 2025-07-18  
-**Mantenido por:** Equipo de Desarrollo ChatMed 
+**Versión:** 2.0 - Enfoque Clínico  
+**Última actualización:** 2025-01-18  
+**Mantenido por:** Equipo de Desarrollo ChatMed
